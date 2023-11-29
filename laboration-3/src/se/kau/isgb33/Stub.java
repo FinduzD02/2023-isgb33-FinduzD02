@@ -101,11 +101,12 @@ public class Stub {
                         String yearStr; 
                         
                         /**  ** Felhantering **
-                         * Om yearObj är en integer så sätts yearStr till värdet av yearObj
-                         * Om yearObk är en String så sätts  yearValue till "cast" yearObj strängen
+                         * Efetsom att vissa år slutar med ett é så måste detta testas för innan resultatet kan skrivas ut
+                         * Om yearObj är en Integer, sätts yearStr till det parsade värdet av den integern.
+                         * Om yearObk är en String så sätts yearValue till string värdet av yearObj
                          * Om yearValue kan parsas till en int så sätts yearStr till värdet av year.
                          * Catch fångar felet NumberFormatException och felmedelanden skrivs ut i terminalen.
-                         * Löser felet genomatt sätta yearStr till det originala sträng värdet
+                         * Löser felet att parsingen inte fungerade så används det originella string värdet.
                          * Om inget av detta fungerar så blir yearStr till ""
                          * Sedan sätts resultatet till hela titel, år 
                          * count++ adderar 1 till countern
