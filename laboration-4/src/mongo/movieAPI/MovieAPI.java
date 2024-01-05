@@ -1,6 +1,11 @@
 package mongo.movieAPI;
 
-
+/**
+ * LABORATION 4
+ * Gabriel Larsson
+ * Sandra Johannesson
+ * Claudia Cheh
+ */
 
 import static spark.Spark.get;
 import static spark.Spark.post;
@@ -44,13 +49,10 @@ public class MovieAPI {
         String connString;
         Logger logger = LoggerFactory.getLogger(MovieAPI.class);
         InputStream input = new FileInputStream("connection.properties");
-
             Properties prop = new Properties();
             prop.load(input);
             connString = prop.getProperty("db.connection_string");
             logger.info(connString);
-
-
             ConnectionString connectionString = new ConnectionString(connString);
             MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(connectionString)
                     .build();
@@ -61,13 +63,13 @@ public class MovieAPI {
             
             /** 
              * GET /test
-             * Detta är en test-endpoint för att se ifall programmet startade korrekt.
+             * Detta är en test-endpoint.
              * Även ifall get fungerade korrekt.
             */
             get("/test", (req, res) -> {
-                logger.info("Test endpoint call detected.");
+                logger.info("Test endpoint kallad (GET).");
                 res.type("application/json");
-                return "{\"message\": \"Test endpoisadasadst\"}";
+                return "{\"message\": \"(get)Test endpoisadasadst\"}";
             });
             /** 
              * POST /test
@@ -75,9 +77,9 @@ public class MovieAPI {
              * 
             */
             post("/test", (req, res) -> {
-                logger.info("Test endpoint call detected.");
+                logger.info("Test endpoint kallad. (POST) ");
                 res.type("application/json");
-                return "{\"message\": \"Test endpoisadasadst\"}";
+                return "{\"message\": \"(post) Test endpoisadasadst\"}";
             });
             
             
@@ -89,10 +91,10 @@ public class MovieAPI {
            * Använder logger för att se ifall sökningen blev korrekt.
            * 
            * Definierar myDoc med ett sökfilter som söker efter vilken titel vi skrev in, tar sedan bort fälten:
-           * 	id,
-           *	poster,
-           *    cast,
-           * 	fullplot,
+           * 	#id,
+           *	#poster,
+           *    #cast,
+           * 	#fullplot,
            * 
            * Sedan returneras det första resultatet ifall något hittas.
            * Att ett resultat finns kontrollerar vi genom att testa ifall myDoc som vi definierade tidigare inte är lika med null, alltså ett dokument finns.
@@ -105,26 +107,26 @@ public class MovieAPI {
                 MongoCollection<Document> collection = database.getCollection("movies");
                 String filter = req.params("name").toLowerCase();
                 filter = WordUtils.capitalizeFully(filter);
-                logger.info("Filtering Movies for name: " + filter);
+                logger.info("Filtrerar filmer efter: " + filter);
 
-                Document myDoc = collection.find(Filters.eq("title", filter))
+                Document movie = collection.find(Filters.eq("title", filter))
                         .projection(new Document("_id", 0)
                                 .append("poster", 0)
                                 .append("cast", 0)
                                 .append("fullplot", 0))
                         .first();
 
-                if (myDoc != null) { 
-                    logger.info("Returning results to JSON");
+                if (movie != null) { 
+                    logger.info("Returenrar resultatet i JSON format.");
                     res.status(200);
-                    return myDoc.toJson();
+                    return movie.toJson();
                     
                     
                 } else {
-                    logger.error("Movie not found.");
+                    logger.error("Ingen film hittades...");
                     res.status(404);
                     res.type("application/json");
-                    return "{\"message\": \"No results found for title: " + "'" + filter + "'" + " found. Try searching for a different title.\"}";
+                    return "{\"message\": \"Inga resultat för: " + "'" + filter + "'" + " hittades. Testa att söka på en ny filmtitel.\"}";
                 }
             });
             
@@ -139,35 +141,35 @@ public class MovieAPI {
              * Vi skapar ett filter för att söka med input titeln. Och returnerar ENDAST fullplot fältet.
              * .first() returnerar det första resultatet som hittades.
              * IF (film hittades) :
-             * Om movies dokumentet inte är null, och har fullplot fältet så hittades en film
-             * Statuskoden sätts till 200, och vi returnerar resultatet i JSON format.
+             *  - Om movies dokumentet inte är null, och har fullplot fältet så hittades en film
+             *  - Statuskoden sätts till 200, och vi returnerar resultatet i JSON format.
              * 
              * ELSE (film hittades inte) :
-             * Loggar ett felmeddelande att något gick fel.
-             * Statuskoden sätts till 404 för not found.
-             * Returnerar ett felmeddelande att ingen film med den sökta titeln hittades.
+             *  - Loggar ett felmeddelande att något gick fel.
+             *  - Statuskoden sätts till 404 för not found.
+             *  - Returnerar ett felmeddelande att ingen film med den sökta titeln hittades.
             */
             
             get("/fullplot/:title", (req, res) -> {
                 MongoCollection<Document> collection = database.getCollection("movies");
                 String title = req.params("title").toLowerCase();
                 title = WordUtils.capitalizeFully(title);
-                logger.info("Searching for movie with title: " + title);
+                logger.info("Söker efter filmer med titel: " + title);
 
                 Document movie = collection.find(Filters.eq("title", title))
                                           .projection(Projections.fields(Projections.excludeId(), Projections.include("fullplot")))
                                           .first();
 
                 if (movie != null && movie.containsKey("fullplot")) {
-                    logger.info("Movie found. Retrieving full plot.");
+                    logger.info("Film hittades! Returnerar 'fullplot'.");
                     res.status(200);
                     res.type("application/json");
                     return movie.toJson();
                 } else {
-                    logger.error("Movie not found or fullplot not available.");
+                    logger.error("Film hittades ej, eller hade ingen fullplot.");
                     res.status(404);
                     res.type("application/json");
-                    return "{\"message\": \"No movie found with title: " + title + "\"}";
+                    return "{\"message\": \"Ingen film hittades för: " + title + "\"}";
                 }
             });
             
@@ -182,36 +184,35 @@ public class MovieAPI {
              * Filtrerar efter titel på samma sätt, men den här gången vill vi endast 
                returnera filmtiteln och dess cast.
              * IF (film hittades) :
-             * Om movies dokumentet inte är null, och har cast fältet så hittades en film
-             * Statuskoden sätts till 200, och vi returnerar resultatet i JSON format.
+             *  - Om movies dokumentet inte är null, och har cast fältet så hittades en film
+             *  - Statuskoden sätts till 200, och vi returnerar resultatet i JSON format.
              * 
              * ELSE (film hittades inte) :
-             * Loggar ett felmeddelande att något gick fel.
-             * Statuskoden sätts till 404 för not found.
-             * Returnerar ett felmeddelande att ingen film med den sökta titeln hittades.
+             *  - Loggar ett felmeddelande att något gick fel.
+             *  - Statuskoden sätts till 404 för not found.
+             *  - Returnerar ett felmeddelande att ingen film med den sökta titeln hittades.
             */
             get("/cast/:title", (req, res) -> {
                 MongoCollection<Document> collection = database.getCollection("movies");
                 String title = req.params("title").toLowerCase();
                 title = WordUtils.capitalizeFully(title);
-                logger.info("Searching for movie with title: " + title);
+                logger.info("Söker efter filmtitel: " + title);
 
                 Document movie = collection.find(Filters.eq("title", title))
                                           .projection(Projections.fields(
-                                              Projections.excludeId(), 
-                                              Projections.include("title", "cast")))
+                                              Projections.excludeId(), Projections.include("title", "cast")))
                                           .first();
 
                 if (movie != null && movie.containsKey("cast")) {
-                    logger.info("Movie found. Retrieving cast information.");
+                    logger.info("Film hittades! Returnerar cast.");
                     res.status(200);
                     res.type("application/json");
                     return movie.toJson();
                 } else {
-                    logger.error("Movie not found or cast information not available.");
+                    logger.error("Film hittades ej, eller hade ingen cast.");
                     res.status(404);
                     res.type("application/json");
-                    return "{\"message\": \"No movie found with title: " + title + "\"}";
+                    return "{\"message\": \"Ingen film hittades för: " + title + "\"}";
                 }
             });
             
@@ -221,89 +222,92 @@ public class MovieAPI {
              * Den kräver att all information som behövs skickas med post requesten som en body
              * Använder en try, catch sats för att testa för fel vid inläggning.
              * 
-             * Try:
-             * Gör datan vi skickar in till ett JSON Objekt
-             * Använder inserOne() för att lägga till en ny post i databasen.
-             * Sätter statuskoden till 202 accepterad statuskoden.
-             * En tom sträng returneras.
+             * Try (lägga till en film lyckades):
+             *  - Gör datan(body) vi skickar in till ett JSON Objekt
+             *  - Använder inserOne() för att lägga till en ny post i databasen.
+             *  - Sätter statuskoden till 202 accepterad statuskoden.
+             *  - En tom sträng returneras.
              * 
              * Catch (något gick fel): 
-             * Statuskoden blir 400 (Fel vid inläggning)
-             * Returnerar ett felmeddelande i JSON format att filmen inte lagts till och att man ska
-               kontrollera datan.
+             *  - Statuskoden blir 400 (Fel vid inläggning)
+             *  - Returnerar ett felmeddelande i JSON format att filmen inte lagts till och att man ska
+                - kontrollera indatan.
             */
             
             post("/title", (req, res) -> {
                 MongoCollection<Document> collection = database.getCollection("movies");
                 try {
-                    JsonObject requestData = JsonParser.parseString(req.body()).getAsJsonObject(); 
-                    
-                    collection.insertOne(Document.parse(requestData.toString()));
-                   
+                    JsonObject bodyData = JsonParser.parseString(req.body()).getAsJsonObject(); 
+                    collection.insertOne(Document.parse(bodyData.toString()));
                     res.status(202);
                     return "";
                     
                 } catch (Exception e) {
+                	logger.error("Film lades ej till, kontrollera in datan.");
                     res.status(400);
                     res.type("application/json");
-                    JsonObject errorMessage = new JsonObject();
-                    errorMessage.addProperty("error", "Failed to add movie. Please check the provided data.");
-                    return errorMessage.toString();
+                    return "{\"message\": \"Något gick fel, kontrollera indatan.\"}";
                 }
             });
             
             /** 
              * GET /genre/{genres}
              * Den här endpointen tar en genre som input och returnerar MAX 10 filmer från den gengern.
+             * antalFilmer räknar hur många filmresultat som hittades.
              * Formaterar input så att första bokstäverna är stora och andra är små
              * Loggar att filmen söks på, för att vara säkra på att funktionen kallades på, och
                att sökningen sker på ett korrekt sätt. 
              * Vi använder en FindIterable då genres är en array, alltså det kan finnas flera gengrar 
                på en film. Vi måste därför gå igenom alla gengrar för filmen. Med limit 10.
-             * vi skapar en JsonArray som heter movieList.
+             * vi skapar en JsonArray som heter filmLista.
              * 
              * IF (om iteratorn har ett nästa resultat):
-             * - Vi använder hasNext för att kontrollera om det finns en nästa film.
-             * - Vi hämtar hela dokumentet och tar bort id, poster, cast, och fullplot.
-             * - Konverterar dokumentet till ett JsonObject med Gson och lägg till det i movieList.
-             * - Lägger till en radbrytning för en bättre output.
+             *  - Vi använder hasNext för att kontrollera om det finns en nästa film.
+             *  - Vi hämtar hela dokumentet och tar bort:
+             * 		#id,
+             *      #poster, 
+             * 		#cast,
+             * 		#fullplot
+             *  - Konverterar dokumentet till ett JsonObject med Gson och lägg till det i filmLista.
+             *  - Lägger till en radbrytning för en bättre output.
              * 
              * ELSE (Ingen film hittades):
-             * - Statuskoden sätts till 404 för not found.
-             * - Returnerar en JSON respons att ingen film hittades.
+             *  - Statuskoden sätts till 404 för not found.
+             *  - Returnerar en JSON respons att ingen film hittades.
             */
             
             get("/genre/:genres", (req, res) -> {
+            	int antalFilmer = 0;
                 MongoCollection<Document> collection = database.getCollection("movies");
                 String filter = req.params("genres").toLowerCase();
                 
                 filter = WordUtils.capitalizeFully(filter);
-                logger.info("Finding movies belonging to genre: " + filter);
+                logger.info("Söker efter genre: " + filter);
                 
                 FindIterable<Document> result = collection.find(Filters.eq("genres", filter)).limit(10);
-                JsonArray movieList = new JsonArray();
+                JsonArray filmLista = new JsonArray();
                 
                 if (result.iterator().hasNext()) {
                     for (Document doc : result) {
+                    	
                         doc.remove("_id");
                         doc.remove("poster");
                         doc.remove("cast");
                         doc.remove("fullplot");
                         
-                        JsonObject movieJson = new Gson().fromJson(doc.toJson(), JsonObject.class);
-                        movieList.add(movieJson);
-                        movieList.add("\n");
+                        JsonObject jsonFilm = new Gson().fromJson(doc.toJson(), JsonObject.class);
+                        filmLista.add(jsonFilm);
+                        filmLista.add("\n");
+                        antalFilmer++;
                     }
                 } else {
                     res.type("application/json");
                     res.status(404);
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("Error", "No movies found");
-                    return errorMsg.toString();
+                    return "{\"message\": \"Ingen sådan genre hittades. Sök på en annan genre.\"}";
                 }
-                
+                logger.info("Hittade: " + antalFilmer + " antal filmer.");
                 JsonObject response = new JsonObject();
-                response.add("movies", movieList);
+                response.add("movies", filmLista);
                 return response;
             });
             
@@ -328,11 +332,12 @@ public class MovieAPI {
              *   - Returnerar en JSON respons att skådespelaren inte hittades i någon film.
              */
             get("/actor/:actor", (req, res) -> {
+            	int antal = 0;
                 MongoCollection<Document> collection = database.getCollection("movies");
                 String actor = req.params("actor").toLowerCase();
                 actor = WordUtils.capitalizeFully(actor);
                 
-                logger.info("Finding movies with actor: " + actor);
+                logger.info("Söker efter skådespelare: " + actor);
 
                 FindIterable<Document> result = collection.find(Filters.eq("cast", actor)).limit(10);
                 
@@ -342,8 +347,10 @@ public class MovieAPI {
                     for (Document doc : result) {
                         String title = doc.getString("title");
                         movieTitles.add(title);
+                        antal++;
                     }
                     
+                    logger.info("Hittade: " + antal + " antal filmer.");
                     res.type("application/json");
                     res.status(200);
                     JsonObject response = new JsonObject();
@@ -353,9 +360,7 @@ public class MovieAPI {
                 } else {
                     res.type("application/json");
                     res.status(404);
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("Error", "Actor not found in any movie");
-                    return errorMsg.toString();
+                    return "{\"message\": \"Den skådespelaren hittades inte i några filmer.\"}";
                 }
             });
             
