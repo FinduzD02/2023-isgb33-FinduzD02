@@ -322,7 +322,7 @@ public class MovieAPI {
              * En JsonArray med filmernas titlar skapas för att lagra resultaten.
              * 
              * IF (om iteratorn har ett nästa resultat):
-             *   - Kontrollerar om det finns matchande filmer.
+             *   - Vi använder hasNext för att kontrollera om det finns en nästa film.
              *   - Hämtar titeln på varje film och lägger till den i movieTitles.
              *   - Sätter HTTP status till 200 för OK.
              *   - Skapar en JSON respons som innehåller filmernas titlar under nyckeln "movies".
