@@ -1,8 +1,8 @@
 package mongo.movieAPI;
 
 /**
- * LABORATION 4
- * Gabriel Larsson
+ * LABORATION 4: Gabriel Larsson
+ * Samarbetat med:
  * Sandra Johannesson
  * Claudia Cheh
  */
@@ -100,7 +100,7 @@ public class MovieAPI {
            * Att ett resultat finns kontrollerar vi genom att testa ifall myDoc som vi definierade tidigare inte är lika med null, alltså ett dokument finns.
            * Om detta är sant så loggar vi att ett resultat kommer att returneras och sedan returneras det. Statuskoden sätts även till 200.
            * 
-           * Om inget resultat hittades så loggar vi ett felmedellande; Movie not found. Och returnerar statuskoden 404
+           * Om inget resultat hittades så loggar vi ett felmedellande; ingen film hittades. Och returnerar statuskoden 404
            * Ett medelande returneras i JSON format att inget resultat för den titeln hittades.
            */
             get("/title/:name", (req, res) -> {
